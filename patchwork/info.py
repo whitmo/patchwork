@@ -13,10 +13,12 @@ def distro_name():
     * ``centos``
     * ``ubuntu``
     * ``debian``
+    * ``arch``
     * ``other``
     """
     sentinel_files = {
-        'fedora': ('fedora-release',)
+        'fedora': ('fedora-release',),
+        'arch': ('pacman.conf',)
     }
     for name, sentinels in sentinel_files.iteritems():
         for sentinel in sentinels:
