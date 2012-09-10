@@ -25,13 +25,20 @@ def cond_mkdir(path):
 ##     fab.run("pacman -U /tmp/%s" %tarball)
 
 
-def entropy():
+def keys():
     entropy = int(fab.run('cat /proc/sys/kernel/random/entropy_avail'))
     if entropy < 200:
-        hexes = (uuid.uuid4().hex for x in range(1000))
-        cmd1 = ";".join("echo %s >> /dev/random" for x in hexes)
-        fab.run(cmd1)
-        
+        # hexes = (uuid.uuid4().hex for x in range(1000))
+        # cmd1 = ";".join("echo %s >> /dev/random" for x in hexes)
+        # fab.run(cmd1)
+        fab.run('pacman-key --populate archlinux')
+        fab.run('pacman --no-confirm -S haveged')
+        fab.run('rc.d start haveged')
+        fab.run('pacman-key  --init')
+        fab.run('pacman-key --populate archlinux')
+        return fab.run("rc.d stop haveged")
+    return fab.run('pacman-key  --init')
+
 
 def update_mirrors(mirrors=default_mirrors,
                    url='https://www.archlinux.org/mirrorlist/all/', pacv='4.0.3'):
@@ -44,7 +51,6 @@ def update_mirrors(mirrors=default_mirrors,
     for mirror in default_mirrors:
         ffiles.uncomment(pmm, mirror)
     fab.run('pacman -Syy')
-    fab.run('pacman -S --noconfirm sudo')
 
     with fab.settings(warn_only=True):
         # for some reason this call has returncode 2
@@ -52,11 +58,13 @@ def update_mirrors(mirrors=default_mirrors,
 
     if not pacv in vinfo: # parse this better
         fab.run('pacman -S --noconfirm pacman')
-        entropy()
-        fab.run('pacman-key  --init')
+        fab.run("curl https://www.archlinux.org/{developers,trustedusers}/ | awk -F\" '(/pgp.mit.edu/) {sub(/.*search=0x/,"");print $1}' | xargs pacman-key --recv-keys")
+        keys()
 
     fab.run('pacman --noconfirm -Sf pacman-mirrorlist')
     fab.run('pacman --noconfirm -Syu')
 
+
+# Edit pacman.conf and uncomment 'SigLevel = Optional TrustAll' and run 'pacman-key --init'.
 
 

@@ -3,28 +3,28 @@ from path import path
 from .. import files
 
 
-def pipinstall(spec, index=None, upgrade=True, venvs=None):
-    """
-    Very basic pip install that will install to multiple targets
-    """
-    targets = venvs and venvs or './' 
-    if isinstance(venvs, basestring):
-        targets = [venvs]
-        
-    base = "pip install {0} %s"
+class Pip(object):
+    def __init__(self, runner=fab.run):
+        self.run = runner
 
-    optional = []
+    def install(self, spec, index=None, upgrade=False):
+        """
+        Very basic pip install that will install to multiple targets
+        """
+        base = "pip install {0} %s"
 
-    if not index is None:
-        optional.extend(['-i', index])
+        optional = []
+        if not index is None:
+            optional.extend(['-i', index])
 
-    if upgrade is True:
-        optional.append('--upgrade')
+        if upgrade:
+            optional.append('--upgrade')
 
-    cmd = base.format(" ".join(optional))
-    for target in targets:
-        with fab.prefix(". %s/bin/activate" %target):
-            fab.sudo(cmd % spec)
+        cmd = base.format(" ".join(optional))
+        self.run(cmd % spec)
+
+
+pip = Pip()
 
 
 def virtualenv(target, python=None, overwrite=True,
